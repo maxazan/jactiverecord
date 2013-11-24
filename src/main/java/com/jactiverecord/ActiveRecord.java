@@ -49,8 +49,9 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
         return this.getClass().getSimpleName().toLowerCase();
     }
 
-    public void set(String field, Object value) {
+    public T set(String field, Object value) {
         this.set(field, value, true);
+        return (T) this;
     }
 
     public void flush() {
@@ -134,6 +135,14 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
             }
         } else {
             return false;
+        }
+    }
+
+    public boolean delete() throws SQLException {
+        if (this.get("id") == null) {
+            return false;
+        } else {
+            return this.getQuery().delete(this.getTableName()).whereId(this.getId()).execute().getCountAffectedRows() > 0;
         }
     }
 

@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import junit.framework.TestCase;
@@ -304,5 +305,15 @@ public class ActiveRecordTest extends TestCase {
     public void testFinalTest() throws SQLException {
         FinalTest ft = new FinalTest();
         FinalTest ft2 = ft.onlyNew().where("id in (1,2)").find();
+    }
+
+    /**
+     * Test of order method, of class Model.
+     */
+    public void testDelete() throws SQLException {
+        List<Test> list = new Test().where("id>?", 2).findAll();
+        for (Test model : list) {
+            assertTrue(model.delete());
+        }
     }
 }
