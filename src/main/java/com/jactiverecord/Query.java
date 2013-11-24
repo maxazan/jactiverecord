@@ -203,7 +203,6 @@ public class Query {
         int count = splitedQuery.length - 1;
         String resultQuery = "";
         List<Object> resultArgs = new ArrayList<Object>();
-
         if (count != args.length) {
             throw new SQLException("Invalid arguments count. Expected " + count + " Actual " + args.length);
         } else {
@@ -266,6 +265,7 @@ public class Query {
     private static QueryResult exequteUpdateQuery(String query, Object... args) throws SQLException {
         QueryResult result = new QueryResult();
         PreparedStatement statement = Query.prepareStatement(query, args);
+        System.out.println("execute update");
         result.setCountAffectedRows(statement.executeUpdate());
         return result;
     }
@@ -465,10 +465,9 @@ public class Query {
      * @throws SQLException if count '?' condition!=arguments.count
      */
     public Query where(String condition, Object... args) throws SQLException {
-        int qCount = condition.split("\\?").length - 1;
-        System.out.println(args);
+        int qCount = (" "+condition+" ").split("\\?").length - 1;
         if (qCount != args.length) {
-            throw new SQLException("Invalid arguments count. Expected " + qCount + " Actual " + args.length);
+            throw new SQLException("Invalid arguments in where method. Expected " + qCount + " Actual " + args.length);
         }
         this.params.addAll(Arrays.asList(args));
         this.whereCondition = (this.whereCondition == null ? " WHERE " : this.whereCondition + " AND ") + condition;
@@ -548,7 +547,7 @@ public class Query {
      */
     public QueryResult execute() throws SQLException {
         this.lastQuery = this.createQuery();
-        return Query.executeQuery(this.queryType, this.lastQuery, this.params);
+        return Query.executeQuery(this.queryType, this.lastQuery, this.params.toArray());
     }
 
     private String createSelectQuery() throws SQLException {

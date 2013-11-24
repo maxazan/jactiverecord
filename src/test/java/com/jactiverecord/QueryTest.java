@@ -37,8 +37,8 @@ import junit.framework.TestCase;
 
 /**
  *
- * 
- * 
+ *
+ *
  * @author maxazan
  */
 public class QueryTest extends TestCase {
@@ -140,7 +140,6 @@ public class QueryTest extends TestCase {
             inParams.add(2);
             inParams.add(3);
             result = Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
-            System.out.println(result.toString());
         } catch (SQLException ex) {
             ex.printStackTrace();
             fail("Exception ");
@@ -161,13 +160,13 @@ public class QueryTest extends TestCase {
             result = Query.executeQuery(Query.QUERY_INSERT, "select * from test limit ?", 1);
             fail("Fail select query do not throw exception");
         } catch (SQLException ex) {
-            
+
         }
         try {
             result = Query.executeQuery(Query.QUERY_SELECT, "insert into test () values ()");
             fail("Fail insert query do not throw exception");
         } catch (SQLException ex) {
-            
+
         }
     }
 
@@ -183,7 +182,7 @@ public class QueryTest extends TestCase {
         } catch (SQLException ex) {
             ex.printStackTrace();
             fail("Normal query throws exception");
-            
+
         }
     }
 
@@ -205,35 +204,44 @@ public class QueryTest extends TestCase {
     public void testGetLastQuery() {
 
     }
-//
-//    /**
-//     * Test of select method, of class Query.
-//     */
-//    public void testSelect() {
-//        System.out.println("select");
-//        String selectString = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.select(selectString);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of update method, of class Query.
-//     */
-//    public void testUpdate() {
-//        System.out.println("update");
-//        String tableName = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.update(tableName);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
+
+    /**
+     * Test of select method, of class Query.
+     */
+    public void testSelect() {
+        Query query = new Query();
+        QueryResult qr = new QueryResult();
+        try {
+            qr = query.select("string").from("test").whereId(1).execute();
+            qr.getData().next();
+            assertEquals(qr.getData().getString("string"), "Test string");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            fail("no need exception");
+        }
+        try {
+            qr.getData().getInt("int");
+            fail("need exception");
+        } catch (SQLException ex) {
+
+        }
+
+    }
+
+    /**
+     * Test of update method, of class Query.
+     */
+    public void testUpdate() {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.update("test").set("string", "Test string updated").whereId(1).execute();
+            assertEquals(qr.getCountAffectedRows(), 1);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            fail("execption while update");
+        }
+    }
+
 //    /**
 //     * Test of insert method, of class Query.
 //     */
