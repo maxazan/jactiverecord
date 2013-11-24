@@ -23,21 +23,35 @@
  */
 package com.jactiverecord;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  *
  * @author maxazan
  */
-public class ConnectionManager {
+public class MainTestSuite extends TestCase {
 
-    public static Connection connection;
+    public MainTestSuite(String testName) {
+        super(testName);
+    }
 
-    public static void connect(String driverName, String url, String user, String password) throws ClassNotFoundException, SQLException {
-        Class.forName(driverName);
-        ConnectionManager.connection = DriverManager.getConnection(url, user, password);
+    public static Test suite() {
+        TestSuite suite = new TestSuite("MainTestSuite");
+        suite.addTestSuite(QueryTest.class);
+        suite.addTestSuite(ActiveRecordTest.class);
+        return suite;
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
     }
 
 }

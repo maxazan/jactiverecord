@@ -21,23 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.jactiverecord;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+package com.jactiverecord.models;
 
 /**
  *
  * @author maxazan
  */
-public class ConnectionManager {
+public final class FinalTest extends AbstractTest<FinalTest> {
 
-    public static Connection connection;
+    public static String TABLE_NAME = "test";
 
-    public static void connect(String driverName, String url, String user, String password) throws ClassNotFoundException, SQLException {
-        Class.forName(driverName);
-        ConnectionManager.connection = DriverManager.getConnection(url, user, password);
+    public String getTableName() {
+        return FinalTest.TABLE_NAME;
     }
-
 }

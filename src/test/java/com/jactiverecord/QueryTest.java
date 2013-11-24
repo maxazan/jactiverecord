@@ -78,6 +78,8 @@ public class QueryTest extends TestCase {
 
     /**
      * Test of getIdentifierQuoteString method, of class Query.
+     *
+     * @throws java.lang.Exception
      */
     public void testGetIdentifierQuoteString() throws Exception {
         String expResult = "`";
@@ -115,17 +117,17 @@ public class QueryTest extends TestCase {
         try {
             result = Query.prepareStatement("select * from test where id=?", 1);
         } catch (SQLException ex) {
-            fail("Exception ");
+            fail(ex.getMessage());
         }
         try {
             result = Query.prepareStatement("select * from test where 1");
         } catch (SQLException ex) {
-            fail("Exception ");
+            fail(ex.getMessage());
         }
         try {
             result = Query.prepareStatement("select * from test where id=? limit ?", 1, 1);
         } catch (SQLException ex) {
-            fail("Exception ");
+            fail(ex.getMessage());
         }
         try {
             List<Object> inParams = new ArrayList<Object>();
@@ -140,9 +142,9 @@ public class QueryTest extends TestCase {
             inParams.add(2);
             inParams.add(3);
             result = Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
+
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            fail("Exception ");
+            fail(ex.getMessage());
         }
     }
 
@@ -172,6 +174,8 @@ public class QueryTest extends TestCase {
 
     /**
      * Test of executeQuery method, of class Query.
+     *
+     * @throws java.lang.Exception
      */
     public void testExecuteQuery_String_ObjectArr() throws Exception {
         QueryResult result;
@@ -180,8 +184,7 @@ public class QueryTest extends TestCase {
             result = Query.executeQuery("insert into test () values ()");
             //result = Query.executeQuery("select * from test limit ?", 1);
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            fail("Normal query throws exception");
+            fail(ex.getMessage());
 
         }
     }
@@ -216,8 +219,7 @@ public class QueryTest extends TestCase {
             qr.getData().next();
             assertEquals(qr.getData().getString("string"), "Test string");
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            fail("no need exception");
+            fail(ex.getMessage());
         }
         try {
             qr.getData().getInt("int");
@@ -234,153 +236,190 @@ public class QueryTest extends TestCase {
     public void testUpdate() {
         Query query = new Query();
         try {
-            QueryResult qr = query.update("test").set("string", "Test string updated").whereId(1).execute();
+            QueryResult qr = query.update("test").set("string", "Test string").whereId(1).execute();
             assertEquals(qr.getCountAffectedRows(), 1);
+            query.clean();
+            qr = query.update("test").set("string", "Test string").execute();
+            assertTrue(qr.getCountAffectedRows() > 1);
+            query.clean();
+            qr = query.update("test").set("string", "Test string").where("id=?", -100).execute();
+            assertTrue(qr.getCountAffectedRows() == 0);
+
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            fail("execption while update");
+            fail(ex.getMessage());
         }
     }
 
-//    /**
-//     * Test of insert method, of class Query.
-//     */
-//    public void testInsert() {
-//        System.out.println("insert");
-//        String tableName = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.insert(tableName);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of delete method, of class Query.
-//     */
-//    public void testDelete() {
-//        System.out.println("delete");
-//        String tableName = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.delete(tableName);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of from method, of class Query.
-//     */
-//    public void testFrom() {
-//        System.out.println("from");
-//        String tableName = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.from(tableName);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of set method, of class Query.
-//     */
-//    public void testSet() {
-//        System.out.println("set");
-//        String field = "";
-//        Object value = null;
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.set(field, value);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of where method, of class Query.
-//     */
-//    public void testWhere() throws Exception {
-//        System.out.println("where");
-//        String condition = "";
-//        Object[] args = null;
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.where(condition, args);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of whereId method, of class Query.
-//     */
-//    public void testWhereId() throws Exception {
-//        System.out.println("whereId");
-//        Integer id = null;
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.whereId(id);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of order method, of class Query.
-//     */
-//    public void testOrder() {
-//        System.out.println("order");
-//        String OrderField = "";
-//        String direction = "";
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.order(OrderField, direction);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of limit method, of class Query.
-//     */
-//    public void testLimit() {
-//        System.out.println("limit");
-//        Integer limit = null;
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.limit(limit);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of offset method, of class Query.
-//     */
-//    public void testOffset() {
-//        System.out.println("offset");
-//        Integer offset = null;
-//        Query instance = new Query();
-//        Query expResult = null;
-//        Query result = instance.offset(offset);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of execute method, of class Query.
-//     */
-//    public void testExecute() throws Exception {
-//        System.out.println("execute");
-//        Query instance = new Query();
-//        QueryResult expResult = null;
-//        QueryResult result = instance.execute();
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
+    /**
+     * Test of insert method, of class Query.
+     */
+    public void testInsert() {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.insert("test").set("string", "Test string").execute();
+            int lastId = qr.getLastInsertId();
+            assertTrue(lastId > 1);
+            query.clean();
+            qr = query.insert("test").set("string", "Test string").execute();
+            assertTrue(qr.getLastInsertId() > lastId);
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+
+    }
+
+    /**
+     * Test of delete method, of class Query.
+     */
+    public void testDelete() {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.delete("test").where("id>?", 2).execute();
+            assertTrue(qr.getCountAffectedRows() > 1);
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of from method, of class Query.
+     */
+    public void testFrom() {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.delete("testes").where("id>?", 2).execute();
+            fail("table do not exists");
+        } catch (SQLException ex) {
+        }
+    }
+
+    /**
+     * Test of set method, of class Query.
+     */
+    public void testSet() {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.update("test").set("string", "Test string").set("string", "Test string 2").set("string", "Test string").whereId(1).execute();
+            assertEquals(qr.getCountAffectedRows(), 1);
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of where method, of class Query.
+     *
+     * @throws java.lang.Exception
+     */
+    public void testWhere() throws Exception {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.update("test").set("string", "Test string").where("id=?", 1).execute();
+            assertEquals(qr.getCountAffectedRows(), 1);
+            query.clean();
+            qr = query.update("test").set("string", "Test string").where("id=?", 1).where("id=?", 2).execute();
+            assertEquals(qr.getCountAffectedRows(), 0);
+            query.clean();
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of whereId method, of class Query.
+     *
+     * @throws java.lang.Exception
+     */
+    public void testWhereId() throws Exception {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.update("test").set("string", "Test string").whereId(1).execute();
+            assertEquals(qr.getCountAffectedRows(), 1);
+            query.clean();
+            qr = query.update("test").set("string", "Test string").whereId(1).whereId(2).execute();
+            assertEquals(qr.getCountAffectedRows(), 0);
+            query.clean();
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of order method, of class Query.
+     */
+    public void testOrder() {
+        try {
+            Query query = new Query();
+            QueryResult rs = query.from("test").order("string", "desc").order("id", "asc").execute();
+            assertTrue(rs.getData().next());
+            assertTrue(rs.getData().getInt("id") == 1);
+            query.clean();
+            rs = query.from("test").order("id", "desc").execute();
+            assertTrue(rs.getData().next());
+            assertTrue(rs.getData().getInt("id") > 1);
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of limit method, of class Query.
+     */
+    public void testLimit() {
+        try {
+            Query query = new Query();
+            QueryResult rs = query.from("test").limit(1).execute();
+            assertTrue(rs.size() == 1);
+            query.clean();
+            rs = query.from("test").limit(2).execute();
+            assertTrue(rs.size() == 2);
+            query.clean();
+            rs = query.from("test").whereId(1).limit(2).execute();
+            assertTrue(rs.size() == 1);
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of offset method, of class Query.
+     */
+    public void testOffset() {
+        try {
+            Query query = new Query();
+            QueryResult rs = query.from("test").limit(2).offset(0).execute();
+            assertTrue(rs.getData().next());
+            assertTrue(rs.getData().next());
+            Integer testId = rs.getData().getInt("id");
+            query.clean();
+            rs = query.from("test").limit(1).offset(1).execute();
+            assertTrue(rs.getData().next());
+            assertEquals(rs.getData().getInt("id"), testId.intValue());
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of execute method, of class Query.
+     */
+    public void testExecute() throws Exception {
+        try {
+            List<Object> inParams = new ArrayList<Object>();
+            inParams.add(1);
+            inParams.add(2);
+            inParams.add(3);
+            Query query = new Query();
+            QueryResult rs = query.from("test").where("id in (?)", inParams).order("id", "desc").limit(1).execute();
+            assertTrue(rs.size() == 1);
+
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
 }

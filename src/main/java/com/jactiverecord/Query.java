@@ -97,7 +97,9 @@ public class Query {
     private int queryType;
 
     private String whereCondition;
-    private List params;
+//    private List params;
+    private List whereParams;
+    private List setParams;
     private Map<String, String> order;
     private Map<String, Object> fields;
     private Integer limit;
@@ -117,7 +119,8 @@ public class Query {
         this.queryType = Query.QUERY_SELECT;
 
         this.whereCondition = null;
-        this.params = new ArrayList();
+        this.whereParams = new ArrayList();
+        this.setParams = new ArrayList();
         this.order = new LinkedHashMap<String, String>();
         this.fields = new HashMap<String, Object>();
         this.limit = null;
@@ -204,7 +207,7 @@ public class Query {
         String resultQuery = "";
         List<Object> resultArgs = new ArrayList<Object>();
         if (count != args.length) {
-            throw new SQLException("Invalid arguments count. Expected " + count + " Actual " + args.length);
+            throw new SQLException("Invalid arguments count for query " + query + ". Expected " + count + " Actual " + args.length);
         } else {
 
             int counterArgiments = -1;
@@ -265,7 +268,6 @@ public class Query {
     private static QueryResult exequteUpdateQuery(String query, Object... args) throws SQLException {
         QueryResult result = new QueryResult();
         PreparedStatement statement = Query.prepareStatement(query, args);
-        System.out.println("execute update");
         result.setCountAffectedRows(statement.executeUpdate());
         return result;
     }
@@ -465,11 +467,11 @@ public class Query {
      * @throws SQLException if count '?' condition!=arguments.count
      */
     public Query where(String condition, Object... args) throws SQLException {
-        int qCount = (" "+condition+" ").split("\\?").length - 1;
+        int qCount = (" " + condition + " ").split("\\?").length - 1;
         if (qCount != args.length) {
             throw new SQLException("Invalid arguments in where method. Expected " + qCount + " Actual " + args.length);
         }
-        this.params.addAll(Arrays.asList(args));
+        this.whereParams.addAll(Arrays.asList(args));
         this.whereCondition = (this.whereCondition == null ? " WHERE " : this.whereCondition + " AND ") + condition;
         return this;
     }
@@ -547,7 +549,28 @@ public class Query {
      */
     public QueryResult execute() throws SQLException {
         this.lastQuery = this.createQuery();
-        return Query.executeQuery(this.queryType, this.lastQuery, this.params.toArray());
+        return Query.executeQuery(this.queryType, this.lastQuery, this.prepareParams().toArray());
+    }
+
+    private List prepareParams() {
+        List params = new ArrayList();
+        //TODO: optimize switch
+        switch (queryType) {
+            case Query.QUERY_SELECT:
+                params.addAll(this.whereParams);
+                break;
+            case Query.QUERY_INSERT:
+                params.addAll(this.setParams);
+                break;
+            case Query.QUERY_UPDATE:
+                params.addAll(setParams);
+                params.addAll(whereParams);
+                break;
+            case Query.QUERY_DELETE:
+                params.addAll(this.whereParams);
+                break;
+        }
+        return params;
     }
 
     private String createSelectQuery() throws SQLException {
@@ -577,6 +600,7 @@ public class Query {
         int index = 0;
         for (String field : this.fields.keySet()) {
             query = query + (index++ != 0 ? "," : "SET ") + Query.getIdentifierQuoteString() + field + Query.getIdentifierQuoteString() + "=?";
+            this.setParams.add(this.fields.get(field));
         }
         if (this.whereCondition != null) {
             query = query + this.whereCondition;
@@ -596,6 +620,7 @@ public class Query {
         int index = 0;
         for (String field : this.fields.keySet()) {
             fieldNames = fieldNames + (index++ != 0 ? "," : "") + Query.getIdentifierQuoteString() + field + Query.getIdentifierQuoteString();
+            this.setParams.add(this.fields.get(field));
         }
         fieldNames = fieldNames + ")";
         String values = " (";

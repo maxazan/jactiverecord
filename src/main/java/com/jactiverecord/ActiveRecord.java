@@ -1,7 +1,25 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The MIT License
+ *
+ * Copyright 2013 maxazan.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package com.jactiverecord;
 
@@ -25,7 +43,7 @@ import java.util.logging.Logger;
 abstract public class ActiveRecord<T extends ActiveRecord> {
 
     private Map<String, Object> properties = new HashMap<String, Object>();
-    private Query query = new Query();
+    private Query query = null;
 
     public String getTableName() {
         return this.getClass().getSimpleName().toLowerCase();
@@ -33,6 +51,21 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
 
     public void set(String field, Object value) {
         this.set(field, value, true);
+    }
+
+    public void flush() {
+        this.query = null;
+    }
+
+    public Query getQuery() {
+        if (this.query == null) {
+            this.query = this.prepareQuery();
+        }
+        return this.query;
+    }
+
+    public Query prepareQuery() {
+        return new Query().from(this.getTableName());
     }
 
     /**
@@ -44,7 +77,7 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
      */
     public void set(String field, Object value, boolean update) {
         if (update) {
-            this.query.set(field, value);
+            this.getQuery().set(field, value);
         }
         this.properties.put(field, value);
     }
@@ -56,7 +89,9 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
     private T createModel() {
         try {
             return (T) this.getClass().newInstance();
-        } catch (Exception ex) {
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(ActiveRecord.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
             Logger.getLogger(ActiveRecord.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
@@ -82,8 +117,12 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
         return ConnectionManager.connection;
     }
 
-    public T find(Object id) throws SQLException {
-        return (T) this.createModelFromResultSet(this.query.select("*").from(this.getTableName()).where("id = ?", id).limit(1).execute().getData());
+    public T find(Integer id) throws SQLException {
+        ResultSet rs = this.getQuery().select("*").whereId(id).limit(1).execute().getData();
+        if (!rs.next()) {
+            return null;
+        }
+        return (T) this.createModelFromResultSet(rs);
     }
 
     public boolean save() throws SQLException {
@@ -99,7 +138,7 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
     }
 
     private boolean insert() throws SQLException {
-        Integer lastInsertId = this.query.insert(this.getTableName()).execute().getLastInsertId();
+        Integer lastInsertId = this.getQuery().insert(this.getTableName()).execute().getLastInsertId();
         if (lastInsertId == null) {
             return false;
         } else {
@@ -109,7 +148,7 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
     }
 
     private boolean update() throws SQLException {
-        if (this.query.update(this.getTableName()).whereId(this.getId()).execute().getCountAffectedRows() > 0) {
+        if (this.getQuery().update(this.getTableName()).whereId(this.getId()).execute().getCountAffectedRows() > 0) {
             return true;
         } else {
             return false;
@@ -129,27 +168,27 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
     }
 
     public T order(String order, String direction) {
-        this.query.order(order, direction);
+        this.getQuery().order(order, direction);
         return (T) this;
     }
 
     public T where(String condition, Object... args) throws SQLException {
-        this.query.where(condition, args);
+        this.getQuery().where(condition, args);
         return (T) this;
     }
 
     public T limit(Integer limit) {
-        this.query.limit(limit);
+        this.getQuery().limit(limit);
         return (T) this;
     }
 
     public T offset(Integer offset) {
-        this.query.offset(offset);
+        this.getQuery().offset(offset);
         return (T) this;
     }
 
     public Integer count() throws SQLException {
-        ResultSet rs = this.query.select("count(*)").execute().getData();
+        ResultSet rs = this.getQuery().select("count(*)").execute().getData();
         while (rs.next()) {
             return rs.getInt(1);
         }
@@ -162,7 +201,7 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
 
     public List<T> findAll() throws SQLException {
         List result = new ArrayList();
-        ResultSet rs = this.query.select("*").execute().getData();
+        ResultSet rs = this.getQuery().select("*").execute().getData();
         while (rs.next()) {
             T model = this.createModelFromResultSet(rs);
             result.add(model);
@@ -171,7 +210,7 @@ abstract public class ActiveRecord<T extends ActiveRecord> {
     }
 
     public T find() throws SQLException {
-        this.query.limit(1);
+        this.getQuery().limit(1);
         List result = this.findAll();
         if (result.isEmpty()) {
             return null;
