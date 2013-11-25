@@ -26,8 +26,6 @@ package com.jactiverecord;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -38,6 +36,24 @@ public class QueryResult implements Iterable<ResultSet> {
     private ResultSet data = null;
     private Integer lastInsertId = null;
     private int countAffectedRows = 0;
+    private String query;
+    private Object[] queryParams;
+
+    public Object[] getQueryParams() {
+        return queryParams;
+    }
+
+    public void setQueryParams(Object[] queryParams) {
+        this.queryParams = queryParams;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
 
     public ResultSet getData() {
         return data;

@@ -23,21 +23,16 @@
  */
 package com.jactiverecord;
 
-import com.jactiverecord.ConnectionManager;
-import com.jactiverecord.Query;
-import com.jactiverecord.QueryResult;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import junit.framework.TestCase;
 
 /**
- *
- *
+ * Test for Query class
  *
  * @author maxazan
  */
@@ -51,23 +46,15 @@ public class QueryTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         ConnectionManager.connect("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/test", "root", "");
+        Query.executeFromFile("src/test/java/com/jactiverecord/mysql.sql");
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+        ConnectionManager.connection.close();
     }
 
-//    /**
-//     * Test of clean method, of class Query.
-//     */
-//    public void testClean() {
-//        System.out.println("clean");
-//        Query instance = new Query();
-//        instance.clean();
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
     /**
      * Test of getConnection method, of class Query.
      */
@@ -87,61 +74,50 @@ public class QueryTest extends TestCase {
         assertEquals(expResult, result);
     }
 
-//    /**
-//     * Test of processValue method, of class Query.
-//     */
-//    public void testProcessValue() throws Exception {
-//        PreparedStatement statement = Query.prepareStatement("select * from test where id=? limit ?", 1);
-//        Query.processValue(statement, index, value);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
     /**
      * Test of prepareStatement method, of class Query.
      */
     public void testPrepareStatement() {
-        String query = "select * from test where id=? limit ?";
-        PreparedStatement result;
         try {
-            result = Query.prepareStatement("select * from test where id=? limit ?", 1);
+            Query.prepareStatement("select * from test where id=? limit ?", 1);
             fail("Exception needed");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
         try {
-            result = Query.prepareStatement("select * from test where 1", 1);
+            Query.prepareStatement("select * from test where 1", 1);
             fail("Exception needed");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
         try {
-            result = Query.prepareStatement("select * from test where id=?", 1);
+            Query.prepareStatement("select * from test where id=?", 1);
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }
         try {
-            result = Query.prepareStatement("select * from test where 1");
+            Query.prepareStatement("select * from test where 1");
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }
         try {
-            result = Query.prepareStatement("select * from test where id=? limit ?", 1, 1);
+            Query.prepareStatement("select * from test where id=? limit ?", 1, 1);
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }
         try {
             List<Object> inParams = new ArrayList<Object>();
-            result = Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
+            Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
             fail("Exception needed");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
         try {
             List<Object> inParams = new ArrayList<Object>();
             inParams.add(1);
             inParams.add(2);
             inParams.add(3);
-            result = Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
+            Query.prepareStatement("select * from test where id in (?) limit ?", inParams, 1);
 
         } catch (SQLException ex) {
             fail(ex.getMessage());
@@ -152,23 +128,22 @@ public class QueryTest extends TestCase {
      * Test of executeQuery method, of class Query.
      */
     public void testExecuteQuery_3args() {
-        QueryResult result;
         try {
-            result = Query.executeQuery(Query.QUERY_SELECT, "select * from test limit ?", 1);
+            Query.executeQuery(Query.QUERY_SELECT, "select * from test limit ?", 1);
         } catch (SQLException ex) {
-            fail("Normal select query throws exception");
+            fail(ex.getMessage());
         }
         try {
-            result = Query.executeQuery(Query.QUERY_INSERT, "select * from test limit ?", 1);
+            Query.executeQuery(Query.QUERY_INSERT, "select * from test limit ?", 1);
             fail("Fail select query do not throw exception");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
         try {
-            result = Query.executeQuery(Query.QUERY_SELECT, "insert into test () values ()");
+            Query.executeQuery(Query.QUERY_SELECT, "insert into test () values ()");
             fail("Fail insert query do not throw exception");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
     }
 
@@ -178,14 +153,11 @@ public class QueryTest extends TestCase {
      * @throws java.lang.Exception
      */
     public void testExecuteQuery_String_ObjectArr() throws Exception {
-        QueryResult result;
         try {
-            result = Query.executeQuery("select * from test limit ?", 1);
-            result = Query.executeQuery("insert into test () values ()");
-            //result = Query.executeQuery("select * from test limit ?", 1);
+            Query.executeQuery("select * from test limit ?", 1);
+            Query.executeQuery("insert into test () values ()");
         } catch (SQLException ex) {
             fail(ex.getMessage());
-
         }
     }
 
@@ -199,13 +171,6 @@ public class QueryTest extends TestCase {
         assertEquals(Query.identifyQuery("update test set id=2 where id=5"), Query.QUERY_UPDATE);
         assertEquals(Query.identifyQuery(" update test set id=2 where id=5"), Query.QUERY_UPDATE);
         assertEquals(Query.identifyQuery("delete from test where id=5"), Query.QUERY_DELETE);
-    }
-
-    /**
-     * Test of getLastQuery method, of class Query.
-     */
-    public void testGetLastQuery() {
-
     }
 
     /**
@@ -225,7 +190,7 @@ public class QueryTest extends TestCase {
             qr.getData().getInt("int");
             fail("need exception");
         } catch (SQLException ex) {
-
+            assertNotNull(ex);
         }
 
     }
@@ -275,8 +240,8 @@ public class QueryTest extends TestCase {
     public void testDelete() {
         Query query = new Query();
         try {
-            QueryResult qr = query.delete("test").where("id>?", 2).execute();
-            assertTrue(qr.getCountAffectedRows() > 1);
+            QueryResult qr = query.delete("test").where("id>?", 1).execute();
+            assertTrue(qr.getCountAffectedRows() > 0);
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }
@@ -288,9 +253,10 @@ public class QueryTest extends TestCase {
     public void testFrom() {
         Query query = new Query();
         try {
-            QueryResult qr = query.delete("testes").where("id>?", 2).execute();
+            query.delete("testes").where("id>?", 2).execute();
             fail("table do not exists");
         } catch (SQLException ex) {
+            assertNotNull(ex);
         }
     }
 
@@ -408,7 +374,7 @@ public class QueryTest extends TestCase {
     /**
      * Test of execute method, of class Query.
      */
-    public void testExecute() throws Exception {
+    public void testExecute() {
         try {
             List<Object> inParams = new ArrayList<Object>();
             inParams.add(1);
@@ -418,6 +384,39 @@ public class QueryTest extends TestCase {
             QueryResult rs = query.from("test").where("id in (?)", inParams).order("id", "desc").limit(1).execute();
             assertTrue(rs.size() == 1);
 
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of clean method, of class Query.
+     */
+    public void testClean() {
+        try {
+            QueryResult rs = new Query().where("id=?", -1).clean().select("*").from("test").execute();
+            assertEquals(rs.size(), 2);
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+    }
+
+    /**
+     * Test of processValue method, of class Query.
+     */
+    public void testProcessValue() {
+
+    }
+
+    /**
+     * Test of executeFromFile method, of class Query.
+     */
+    public void testExecuteFromFile() {
+        String filename = "src/test/java/com/jactiverecord/mysql.sql";
+        try {
+            Query.executeFromFile(filename);
+        } catch (IOException ex) {
+            fail(ex.getMessage());
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }

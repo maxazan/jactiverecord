@@ -49,11 +49,13 @@ public class ActiveRecordTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         ConnectionManager.connect("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/test", "root", "");
+        Query.executeFromFile("src/test/java/com/jactiverecord/mysql.sql");
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+        ConnectionManager.connection.close();
     }
 
     /**
@@ -231,7 +233,7 @@ public class ActiveRecordTest extends TestCase {
         String testString = "Test string";
         String testText = "Test text";
         String testEnum = "normal";
-        String testDateString = "2010-11-10";
+        String testDateString = "2010-11-11";
         String testDateTimeString = "2010-11-10 20:40:22";
         String testDateTimestampString = "2010-11-10 20:40:23";
 

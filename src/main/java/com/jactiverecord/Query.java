@@ -23,6 +23,11 @@
  */
 package com.jactiverecord;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -97,14 +102,12 @@ public class Query {
     private int queryType;
 
     private String whereCondition;
-//    private List params;
     private List whereParams;
     private List setParams;
     private Map<String, String> order;
     private Map<String, Object> fields;
     private Integer limit;
     private Integer offset;
-    private String lastQuery;
 
     {
         this.clean();
@@ -112,8 +115,10 @@ public class Query {
 
     /**
      * Method reset all variables
+     *
+     * @return Query object for continue query building
      */
-    public void clean() {
+    public Query clean() {
         this.selectString = "*";
         this.tableName = null;
         this.queryType = Query.QUERY_SELECT;
@@ -125,7 +130,7 @@ public class Query {
         this.fields = new HashMap<String, Object>();
         this.limit = null;
         this.offset = null;
-        this.lastQuery = null;
+        return this;
     }
 
     /**
@@ -246,34 +251,28 @@ public class Query {
         }
     }
 
-    private static QueryResult exequteSelectQuery(String query, Object... args) throws SQLException {
-        QueryResult result = new QueryResult();
-        PreparedStatement statement = Query.prepareStatement(query, args);
+    private static void exequteSelectQuery(QueryResult result) throws SQLException {
+        PreparedStatement statement = Query.prepareStatement(result.getQuery(), result.getQueryParams());
         result.setData(statement.executeQuery());
-        return result;
     }
 
-    private static QueryResult exequteInsertQuery(String query, Object... args) throws SQLException {
-        QueryResult result = new QueryResult();
-        PreparedStatement statement = Query.prepareStatement(query, args);
+    private static void exequteInsertQuery(QueryResult result) throws SQLException {
+        PreparedStatement statement = Query.prepareStatement(result.getQuery(), result.getQueryParams());
         if (statement.executeUpdate() > 0) {
             ResultSet rs = statement.getGeneratedKeys();
             if (rs.next()) {
                 result.setLastInsertId(rs.getInt(1));
             }
         }
-        return result;
     }
 
-    private static QueryResult exequteUpdateQuery(String query, Object... args) throws SQLException {
-        QueryResult result = new QueryResult();
-        PreparedStatement statement = Query.prepareStatement(query, args);
+    private static void exequteUpdateQuery(QueryResult result) throws SQLException {
+        PreparedStatement statement = Query.prepareStatement(result.getQuery(), result.getQueryParams());
         result.setCountAffectedRows(statement.executeUpdate());
-        return result;
     }
 
-    private static QueryResult exequteDeleteQuery(String query, Object... args) throws SQLException {
-        return Query.exequteUpdateQuery(query, args);
+    private static void exequteDeleteQuery(QueryResult result) throws SQLException {
+        Query.exequteUpdateQuery(result);
     }
 
     /**
@@ -290,17 +289,25 @@ public class Query {
      * @throws SQLException
      */
     public static QueryResult executeQuery(int queryType, String query, Object... args) throws SQLException {
+        QueryResult rs = new QueryResult();
+        rs.setQuery(query);
+        rs.setQueryParams(args);
+
         switch (queryType) {
             case Query.QUERY_SELECT:
-                return Query.exequteSelectQuery(query, args);
+                Query.exequteSelectQuery(rs);
+                break;
             case Query.QUERY_INSERT:
-                return Query.exequteInsertQuery(query, args);
+                Query.exequteInsertQuery(rs);
+                break;
             case Query.QUERY_UPDATE:
-                return Query.exequteUpdateQuery(query, args);
+                Query.exequteUpdateQuery(rs);
+                break;
             case Query.QUERY_DELETE:
-                return Query.exequteDeleteQuery(query, args);
+                Query.exequteDeleteQuery(rs);
+                break;
         }
-        return null;
+        return rs;
     }
 
     /**
@@ -323,6 +330,46 @@ public class Query {
     }
 
     /**
+     * Import SQL from file
+     *
+     * @param filename
+     * @throws FileNotFoundException
+     * @throws IOException
+     * @throws SQLException
+     */
+    public static void executeFromFile(String filename) throws FileNotFoundException, IOException, SQLException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(new File(filename)));
+        String line;
+        String sql = "";
+
+        while ((line = bufferedReader.readLine()) != null) {
+            if (line.trim().startsWith("//")) {
+                continue;
+            }
+            if (line.trim().startsWith("--")) {
+                continue;
+            }
+
+            sql += " " + line.trim();
+            sql = sql.trim();
+
+            if (line.indexOf("--") >= 0) {
+                sql += "\n";
+            }
+
+            if (sql.endsWith(";")) {
+                Query.executeQuery(sql.substring(0, sql.length() - 1));
+                sql = "";
+            }
+        }
+
+        if (!sql.equals("")) {
+            Query.executeQuery(sql);
+        }
+
+    }
+
+    /**
      * Method for identifying query
      *
      * @param query
@@ -339,17 +386,11 @@ public class Query {
         if (query.startsWith("delete")) {
             return Query.QUERY_DELETE;
         }
+        if (query.startsWith("truncate") || query.startsWith("create") || query.startsWith("drop") || query.startsWith("alter")) {
+            return Query.QUERY_UPDATE;
+        }
 
         return Query.QUERY_SELECT;
-    }
-
-    /**
-     * Method return last executed query
-     *
-     * @return last executed query
-     */
-    public String getLastQuery() {
-        return lastQuery;
     }
 
     /**
@@ -548,8 +589,7 @@ public class Query {
      * @throws SQLException
      */
     public QueryResult execute() throws SQLException {
-        this.lastQuery = this.createQuery();
-        return Query.executeQuery(this.queryType, this.lastQuery, this.prepareParams().toArray());
+        return Query.executeQuery(this.queryType, this.createQuery(), this.prepareParams().toArray());
     }
 
     private List prepareParams() {
