@@ -80,12 +80,15 @@ public class QueryResult implements Iterable<ResultSet> {
     }
 
     public Iterator iterator() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        QueryResultIterator iterator=new QueryResultIterator(this.getData());
+        return iterator;
     }
 
     public int size() {
+        if (this.getData() == null) {
+            return 0;
+        }
         int rowsCount = 0;
-        ResultSet resultSet = this.getData();
         try {
             if (this.getData().last()) {
                 rowsCount = this.getData().getRow();
@@ -99,11 +102,19 @@ public class QueryResult implements Iterable<ResultSet> {
     }
 
     public boolean isEmpty() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (this.size() > 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.data = null;
+        this.lastInsertId = null;
+        this.countAffectedRows = 0;
+        this.query = null;
+        this.queryParams = null;
     }
 
 }

@@ -412,6 +412,21 @@ public class Query {
     }
 
     /**
+     * Method part of query creation. Synonym for select("*")
+     *
+     * <pre>
+     * QueryResult result=new Query().select().from("table").execute();
+     * the same as
+     * QueryResult result=new Query().select("*").from("table").execute();
+     * </pre>
+     *
+     * @return Query object for continue query building
+     */
+    public Query select() {
+        return this.select("*");
+    }
+
+    /**
      * Method part of query creation.
      *
      * <pre>

@@ -221,13 +221,14 @@ public class QueryTest extends TestCase {
     public void testInsert() {
         Query query = new Query();
         try {
-            QueryResult qr = query.insert("test").set("string", "Test string").execute();
+            String s="Test string";
+            QueryResult qr = query.insert("test").set("string", s).execute();
             int lastId = qr.getLastInsertId();
             assertTrue(lastId > 1);
             query.clean();
-            qr = query.insert("test").set("string", "Test string").execute();
-            assertTrue(qr.getLastInsertId() > lastId);
-
+            qr = query.select("string").from("test").whereId(lastId).execute();
+            qr.getData().next();
+            assertTrue(qr.getData().getString("string").equals(s));
         } catch (SQLException ex) {
             fail(ex.getMessage());
         }

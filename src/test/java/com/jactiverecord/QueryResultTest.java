@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.jactiverecord;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Iterator;
+import java.sql.SQLException;
 import junit.framework.TestCase;
 
 /**
@@ -33,194 +33,191 @@ import junit.framework.TestCase;
  * @author maxazan
  */
 public class QueryResultTest extends TestCase {
-    
+
     public QueryResultTest(String testName) {
         super(testName);
     }
-    
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        ConnectionManager.connect("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/test", "root", "");
+        Query.executeFromFile("src/test/java/com/jactiverecord/mysql.sql");
     }
-    
+
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+        ConnectionManager.connection.close();
     }
 
     /**
      * Test of getQueryParams method, of class QueryResult.
      */
     public void testGetQueryParams() {
-        System.out.println("getQueryParams");
-        QueryResult instance = new QueryResult();
-        Object[] expResult = null;
-        Object[] result = instance.getQueryParams();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Object[] objs = new Object[2];
+        objs[0] = "hello";
+        objs[1] = "world";
+        QueryResult qr = new QueryResult();
+        qr.setQueryParams(objs);
+        assertEquals(qr.getQueryParams(), objs);
     }
 
     /**
      * Test of setQueryParams method, of class QueryResult.
      */
     public void testSetQueryParams() {
-        System.out.println("setQueryParams");
-        Object[] queryParams = null;
-        QueryResult instance = new QueryResult();
-        instance.setQueryParams(queryParams);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Object[] objs = new Object[2];
+        objs[0] = "hello";
+        objs[1] = "world";
+        QueryResult qr = new QueryResult();
+        qr.setQueryParams(objs);
+        assertEquals(qr.getQueryParams(), objs);
     }
 
     /**
      * Test of getQuery method, of class QueryResult.
      */
     public void testGetQuery() {
-        System.out.println("getQuery");
-        QueryResult instance = new QueryResult();
-        String expResult = "";
-        String result = instance.getQuery();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        String query = "SELECT * FROM test WHERE id=?";
+        QueryResult qr = new QueryResult();
+        qr.setQuery(query);
+        assertEquals(qr.getQuery(), query);
     }
 
     /**
      * Test of setQuery method, of class QueryResult.
      */
     public void testSetQuery() {
-        System.out.println("setQuery");
-        String query = "";
-        QueryResult instance = new QueryResult();
-        instance.setQuery(query);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        String query = "SELECT * FROM test WHERE id=?";
+        QueryResult qr = new QueryResult();
+        qr.setQuery(query);
+        assertEquals(qr.getQuery(), query);
     }
 
     /**
      * Test of getData method, of class QueryResult.
      */
-    public void testGetData() {
-        System.out.println("getData");
-        QueryResult instance = new QueryResult();
-        ResultSet expResult = null;
-        ResultSet result = instance.getData();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    public void testGetData() throws SQLException {
+        QueryResult qr = new Query().from("test").whereId(1).execute();
+        assertTrue(qr.getData().next());
     }
 
     /**
      * Test of setData method, of class QueryResult.
      */
-    public void testSetData() {
-        System.out.println("setData");
-        ResultSet data = null;
-        QueryResult instance = new QueryResult();
-        instance.setData(data);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    public void testSetData() throws SQLException {
+        QueryResult result = new QueryResult();
+        String query = "SELECT * FROM test WHERE id=?";
+        result.setQuery(query);
+        Object[] objs = new Object[1];
+        objs[0] = 1;
+        result.setQueryParams(objs);
+        PreparedStatement statement = Query.prepareStatement(result.getQuery(), result.getQueryParams());
+        ResultSet rs = statement.executeQuery();
+        result.setData(rs);
+        assertEquals(result.getData(), rs);
     }
 
     /**
      * Test of getLastInsertId method, of class QueryResult.
      */
-    public void testGetLastInsertId() {
-        System.out.println("getLastInsertId");
-        QueryResult instance = new QueryResult();
-        Integer expResult = null;
-        Integer result = instance.getLastInsertId();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    public void testGetLastInsertId() throws SQLException {
+        Query query = new Query();
+        try {
+            QueryResult qr = query.insert("test").set("string", "Test string").execute();
+            int lastId = qr.getLastInsertId();
+            assertTrue(lastId > 1);
+            query.clean();
+            qr = query.insert("test").set("string", "Test string").execute();
+            assertTrue(qr.getLastInsertId() > lastId);
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+
     }
 
     /**
      * Test of setLastInsertId method, of class QueryResult.
      */
     public void testSetLastInsertId() {
-        System.out.println("setLastInsertId");
-        Integer lastInsertId = null;
-        QueryResult instance = new QueryResult();
-        instance.setLastInsertId(lastInsertId);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        QueryResult qr = new QueryResult();
+        qr.setLastInsertId(3);
+        assertEquals(qr.getLastInsertId(), new Integer(3));
     }
 
     /**
      * Test of getCountAffectedRows method, of class QueryResult.
      */
     public void testGetCountAffectedRows() {
-        System.out.println("getCountAffectedRows");
-        QueryResult instance = new QueryResult();
-        int expResult = 0;
-        int result = instance.getCountAffectedRows();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Query query = new Query();
+        try {
+            QueryResult qr = query.update("test").set("string", "Hello world").execute();
+            assertTrue(qr.getCountAffectedRows() == 2);
+        } catch (SQLException ex) {
+            fail(ex.getMessage());
+        }
+
     }
 
     /**
      * Test of setCountAffectedRows method, of class QueryResult.
      */
     public void testSetCountAffectedRows() {
-        System.out.println("setCountAffectedRows");
-        int countAffectedRows = 0;
-        QueryResult instance = new QueryResult();
-        instance.setCountAffectedRows(countAffectedRows);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        QueryResult qr = new QueryResult();
+        qr.setCountAffectedRows(2);
+        assertEquals(qr.getCountAffectedRows(), 2);
     }
 
     /**
      * Test of iterator method, of class QueryResult.
      */
-    public void testIterator() {
-        System.out.println("iterator");
-        QueryResult instance = new QueryResult();
-        Iterator expResult = null;
-        Iterator result = instance.iterator();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    public void testIterator() throws SQLException {
+        QueryResult instance = new Query().select().from("test").execute();
+        int count = 0;
+        for (ResultSet rs : instance) {
+            count++;
+            assertFalse(rs.getString("string").isEmpty());
+        }
+        assertEquals(count, 2);
+
     }
 
     /**
      * Test of size method, of class QueryResult.
      */
-    public void testSize() {
-        System.out.println("size");
+    public void testSize() throws SQLException {
         QueryResult instance = new QueryResult();
-        int expResult = 0;
-        int result = instance.size();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertEquals(instance.size(), 0);
+        instance.clear();
+        instance = new Query().select().from("test").execute();
+        assertEquals(instance.size(), 2);
+        instance.clear();
+        instance = new Query().select().from("test").whereId(-1).execute();
+        assertEquals(instance.size(), 0);
     }
 
     /**
      * Test of isEmpty method, of class QueryResult.
      */
-    public void testIsEmpty() {
-        System.out.println("isEmpty");
+    public void testIsEmpty() throws SQLException {
         QueryResult instance = new QueryResult();
-        boolean expResult = false;
-        boolean result = instance.isEmpty();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        assertTrue(instance.isEmpty());
+        instance.clear();
+        instance = new Query().select().from("test").execute();
+        assertFalse(instance.isEmpty());
+        instance.clear();
+        instance = new Query().select().from("test").whereId(-1).execute();
+        assertTrue(instance.isEmpty());
+
     }
 
     /**
      * Test of clear method, of class QueryResult.
      */
     public void testClear() {
-        System.out.println("clear");
         QueryResult instance = new QueryResult();
         instance.clear();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
     }
-    
+
 }
